@@ -33,8 +33,10 @@ public class Robot extends TimedRobot {
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
   Solenoid gear;
+  Solenoid hatch;
   Compressor c;
   Joystick joy;
+  boolean hatchBotton;
 
   WPI_TalonSRX leftMaster,  rightMaster;
   VictorSPX leftSlave,   rightSlave;
@@ -73,10 +75,14 @@ public class Robot extends TimedRobot {
 
     
     gear = new Solenoid(50, 1);
+    hatch = new Solenoid(channel);
     c = new Compressor(0);
     c.setClosedLoopControl(true);
 
     joy = new Joystick(0);
+
+    
+     
     
     
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
@@ -135,6 +141,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void teleopPeriodic() {
+    //shooter
     if(joy.getRawButton(5)){
       left.set(ControlMode.PercentOutput, 0.7);
       right.set(ControlMode.PercentOutput, -0.7);
@@ -149,10 +156,16 @@ public class Robot extends TimedRobot {
       left.set(ControlMode.PercentOutput, 0); 
       right.set(ControlMode.PercentOutput, 0);
     }
+
+    hatch.set(! joy.getRawButton(7));
+
+
     moveSpeed = joy.getRawAxis(3) - joy.getRawAxis(2);
     rotation = joy.getRawAxis(0);
     drive.arcadeDrive(moveSpeed, rotation);
   }
+
+
 
   /**
    * This function is called periodically during test mode.
