@@ -7,15 +7,15 @@
 
 package frc.robot;
 
-import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
 import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.VictorSP;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -32,22 +32,27 @@ public class Robot extends TimedRobot {
   private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
-  Solenoid gear;
-  Solenoid hatch;
+  
+  
+  
+  Solenoid gear, hatch;
   Compressor c;
+
+
   Joystick joy;
-  boolean hatchBotton;
 
   WPI_TalonSRX leftMaster,  rightMaster;
-  VictorSPX leftSlave,   rightSlave;
-  VictorSPX left, right;
+  VictorSPX leftSlave, rightSlave, left, right;
 
   DifferentialDrive drive;
 
-  // DifferentialDrive cargo;
+  Encoder leftEncoder, rightEncoder;
 
-  Double moveSpeed;
-  Double rotation;
+
+  Double moveSpeed, rotation;
+
+  Boolean state;
+
 
 
   /**
@@ -62,6 +67,7 @@ public class Robot extends TimedRobot {
     rightMaster = new WPI_TalonSRX(12);
     leftSlave = new VictorSPX(13);
     rightSlave = new VictorSPX(14);
+
     leftSlave.follow(leftMaster);
     rightSlave.follow(rightMaster);
     
@@ -69,17 +75,21 @@ public class Robot extends TimedRobot {
     rightMaster.configOpenloopRamp(0.4);
 
     drive = new DifferentialDrive(leftMaster, rightMaster);
-    drive.setMaxOutput(0.5);
+    drive.setMaxOutput(1);
 
-    // cargo = new DifferentialDrive(left, right);
+    leftEncoder = new Encoder(0, 1);
+    rightEncoder = new Encoder(2, 3);
 
     
-    gear = new Solenoid(50, 1);
-    hatch = new Solenoid(channel);
+    gear = new Solenoid(50, 0);
+    hatch = new Solenoid(50, 1);
+    
     c = new Compressor(0);
     c.setClosedLoopControl(true);
 
     joy = new Joystick(0);
+
+    state = false;
 
     
      
@@ -139,14 +149,12 @@ public class Robot extends TimedRobot {
   /**
    * This function is called periodically during operator control.
    */
-  @Override
+  @Override 
   public void teleopPeriodic() {
     //shooter
     if(joy.getRawButton(5)){
       left.set(ControlMode.PercentOutput, 0.7);
       right.set(ControlMode.PercentOutput, -0.7);
-    // left.set(ControlMode.PercentOutput, 0);
-    // right.set(ControlMode.PercentOutput, 0);
     }
     else if(joy.getRawButton(6)){
       left.set(ControlMode.PercentOutput, -0.4);
@@ -157,14 +165,24 @@ public class Robot extends TimedRobot {
       right.set(ControlMode.PercentOutput, 0);
     }
 
-    hatch.set(! joy.getRawButton(7));
 
+    //Hatch
+    if (joy.getRawButton(7)){
+      hatch.set(true);
+    }
+    else if (joy.getRawButton(8)){
+      hatch.set(false);
+    }
 
+    //drive train
     moveSpeed = joy.getRawAxis(3) - joy.getRawAxis(2);
     rotation = joy.getRawAxis(0);
-    drive.arcadeDrive(moveSpeed, rotation);
-  }
+    drive.arcadeDrive(moveSpeed, - rotation);
 
+    gear.set(joy.getRawButton(9));
+
+  
+  }
 
 
   /**
