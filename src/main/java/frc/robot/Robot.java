@@ -11,14 +11,15 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
+import edu.wpi.cscore.UsbCamera;
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -28,10 +29,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * project.
  */
 public class Robot extends TimedRobot {
-  private static final String kDefaultAuto = "Default";
-  private static final String kCustomAuto = "My Auto";
-  private String m_autoSelected;
-  private final SendableChooser<String> m_chooser = new SendableChooser<>();
   
   
   
@@ -53,6 +50,10 @@ public class Robot extends TimedRobot {
 
   Boolean state;
 
+  Timer time;
+
+  UsbCamera frontCamera;
+  UsbCamera lowCamera;
 
 
   /**
@@ -92,12 +93,10 @@ public class Robot extends TimedRobot {
     state = false;
 
     
-     
+    frontCamera = CameraServer.getInstance().startAutomaticCapture();
+    lowCamera = CameraServer.getInstance().startAutomaticCapture();
     
     
-    m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
-    m_chooser.addOption("My Auto", kCustomAuto);
-    SmartDashboard.putData("Auto choices", m_chooser);
   }
 
   /**
@@ -125,9 +124,21 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousInit() {
-    m_autoSelected = m_chooser.getSelected();
+  
     // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
-    System.out.println("Auto selected: " + m_autoSelected);
+        // -----Use this code------
+    
+     //Forward 
+     moveBotAuto(1.9, 0.7, 0); 
+     //Turn left
+      moveBotAuto(0.3, 0, -1);
+     //Forward
+       moveBotAuto(0.5, 0.7, 0); 
+      //Turn right 
+     moveBotAuto(0.32, 0, 1);
+      //Forward 
+     moveBotAuto(0.2, 0.7, 0);
+     
   }
 
   /**
@@ -135,15 +146,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousPeriodic() {
-    switch (m_autoSelected) {
-      case kCustomAuto:
-        // Put custom auto code here
-        break;
-      case kDefaultAuto:
-      default:
-        // Put default auto code here
-        break;
-    }
+    
   }
 
   /**
@@ -177,9 +180,9 @@ public class Robot extends TimedRobot {
     //drive train
     moveSpeed = joy.getRawAxis(3) - joy.getRawAxis(2);
     rotation = joy.getRawAxis(0);
-    drive.arcadeDrive(moveSpeed, - rotation);
+    drive.arcadeDrive(-moveSpeed, - rotation);
 
-    gear.set(joy.getRawButton(9));
+    gear.set(! joy.getRawButton(3));
 
   
   }
@@ -191,4 +194,12 @@ public class Robot extends TimedRobot {
   @Override
   public void testPeriodic() {
   }
+  
+  public void moveBotAuto(double timeEnd, double speed, double rotate) {
+    time.start();
+      while (time.get() < timeEnd) {
+        drive.arcadeDrive(-(speed), rotate);
+      }
+      time.reset();
+    }
 }
