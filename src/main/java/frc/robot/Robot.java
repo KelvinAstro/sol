@@ -6,6 +6,7 @@
 /*----------------------------------------------------------------------------*/
 
 package frc.robot;
+// import frc.robot.DriveTrain;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
@@ -20,6 +21,10 @@ import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+
+import easypath.EasyPath;
+import easypath.EasyPathConfig;
+import easypath.PathUtil;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -36,14 +41,14 @@ public class Robot extends TimedRobot {
   Compressor c;
 
 
-  Joystick joy;
+  Joystick Driver, Operator;
 
-  WPI_TalonSRX leftMaster,  rightMaster;
-  VictorSPX leftSlave, rightSlave, left, right;
-
-  DifferentialDrive drive;
+  
+  VictorSPX left, right;
 
   Encoder leftEncoder, rightEncoder;
+
+  
 
 
   Double moveSpeed, rotation;
@@ -55,31 +60,28 @@ public class Robot extends TimedRobot {
   UsbCamera frontCamera;
   UsbCamera lowCamera;
 
+  static DriveTrain dt;
+
+  double rDist;
+
+  // EasyPathConfig config;
+
 
   /**
    * This function is run when the robot is first started up and should be
    * used for any initialization code.
    */
   @Override
-  public void robotInit() {
+  public void robotInit() { 
+    
     left = new VictorSPX(21);
     right = new VictorSPX(22);
-    leftMaster = new WPI_TalonSRX(11);
-    rightMaster = new WPI_TalonSRX(12);
-    leftSlave = new VictorSPX(13);
-    rightSlave = new VictorSPX(14);
-
-    leftSlave.follow(leftMaster);
-    rightSlave.follow(rightMaster);
     
-    leftMaster.configOpenloopRamp(0.4);
-    rightMaster.configOpenloopRamp(0.4);
+    rightEncoder = new Encoder(0, 1);
+    leftEncoder = new Encoder(2, 3);
 
-    drive = new DifferentialDrive(leftMaster, rightMaster);
-    drive.setMaxOutput(1);
-
-    leftEncoder = new Encoder(0, 1);
-    rightEncoder = new Encoder(2, 3);
+    rightEncoder.setName("right");
+    leftEncoder.setName("left");
 
     
     gear = new Solenoid(50, 0);
@@ -88,13 +90,43 @@ public class Robot extends TimedRobot {
     c = new Compressor(0);
     c.setClosedLoopControl(true);
 
-    joy = new Joystick(0);
+    Driver = new Joystick(0);
+    Operator = new Joystick(1);
 
     state = false;
 
     
     frontCamera = CameraServer.getInstance().startAutomaticCapture();
     lowCamera = CameraServer.getInstance().startAutomaticCapture();
+
+    
+
+     dt = new DriveTrain();
+     
+    //  config = new EasyPathConfig(
+    //     dt, // the subsystem itself
+    //     dt::setLeftRightMotorSpeeds, // function to set left/right speeds
+    //     // function to give EasyPath the length driven
+    //     () -> PathUtil.defaultLengthDrivenEstimator(dt::getLeftDistance, dt::getRightDistance),
+    //     dt::getHeading, // function to give EasyPath the heading of your robot
+    //     dt::reset, // function to reset your encoders to 0
+    //     0.07 // kP value for P loop
+    // );
+    
+    // config = new EasyPathConfig(
+    //   dt, //subsystem, 
+    //   dt::setLeftRightMotorSpeeds, //setLeftRightDriveSpeedFunction, 
+    //   () -> PathUtil.defaultLengthDrivenEstimator(dt::getLeftDistance, dt::getRightDistance),
+    //   dt::getHeading, // getCurrentAngleFunction, 
+    //   dt::reset, //resetEncodersAndGyroFunction, 
+    //   0.07  //kP)
+    // );
+    
+    
+
+
+
+    time = new Timer();
     
     
   }
@@ -129,15 +161,15 @@ public class Robot extends TimedRobot {
         // -----Use this code------
     
      //Forward 
-     moveBotAuto(1.9, 0.7, 0); 
+     moveBotAuto(1.8, 1.0, 0); 
      //Turn left
-      moveBotAuto(0.3, 0, -1);
+      moveBotAuto(0.45, 0, 1);
      //Forward
-       moveBotAuto(0.5, 0.7, 0); 
+       moveBotAuto(0.5, 1.0, 0); 
       //Turn right 
-     moveBotAuto(0.32, 0, 1);
+     moveBotAuto(0.45, 0, -1);
       //Forward 
-     moveBotAuto(0.2, 0.7, 0);
+     moveBotAuto(0.2, 1.0, 0);
      
   }
 
@@ -155,13 +187,13 @@ public class Robot extends TimedRobot {
   @Override 
   public void teleopPeriodic() {
     //shooter
-    if(joy.getRawButton(5)){
-      left.set(ControlMode.PercentOutput, 0.7);
-      right.set(ControlMode.PercentOutput, -0.7);
+    if(Operator.getRawButton(5)){
+      left.set(ControlMode.PercentOutput, 1.0);
+      right.set(ControlMode.PercentOutput, 1.0);
     }
-    else if(joy.getRawButton(6)){
-      left.set(ControlMode.PercentOutput, -0.4);
-      right.set(ControlMode.PercentOutput, 0.4);
+    else if(Operator.getRawButton(6)){
+      left.set(ControlMode.PercentOutput, -0.3);
+      right.set(ControlMode.PercentOutput, -0.3);
     }
     else{
       left.set(ControlMode.PercentOutput, 0); 
@@ -170,21 +202,115 @@ public class Robot extends TimedRobot {
 
 
     //Hatch
-    if (joy.getRawButton(7)){
+    if (Operator.getRawButton(7)){
       hatch.set(true);
     }
-    else if (joy.getRawButton(8)){
+    else if (Operator.getRawButton(8)){
       hatch.set(false);
     }
+    
 
     //drive train
-    moveSpeed = joy.getRawAxis(3) - joy.getRawAxis(2);
-    rotation = joy.getRawAxis(0);
-    drive.arcadeDrive(-moveSpeed, - rotation);
+    moveSpeed = Driver.getRawAxis(3) - Driver.getRawAxis(2);
+    rotation = Driver.getRawAxis(0);
+    dt.drive.arcadeDrive(-moveSpeed, - rotation);
 
-    gear.set(! joy.getRawButton(3));
+    gear.set(! Driver.getRawButton(3));
 
-  
+    rDist = rightEncoder.getDistance();
+
+    System.out.print("LEFT ENCODER" + leftEncoder.getDistance());
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+    System.out.print("RIGHT ENCODER   " + rDist);
+
+
+    
   }
 
 
@@ -194,11 +320,12 @@ public class Robot extends TimedRobot {
   @Override
   public void testPeriodic() {
   }
-  
+
   public void moveBotAuto(double timeEnd, double speed, double rotate) {
+    time.reset();
     time.start();
       while (time.get() < timeEnd) {
-        drive.arcadeDrive(-(speed), rotate);
+        dt.drive.arcadeDrive(-(speed), rotate);
       }
       time.reset();
     }
