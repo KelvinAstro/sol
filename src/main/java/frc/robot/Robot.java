@@ -6,12 +6,16 @@
 /*----------------------------------------------------------------------------*/
 
 package frc.robot;
-// import frc.robot.DriveTrain;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
-import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
+
+import easypath.EasyPath;
+import easypath.EasyPathConfig;
+import easypath.FollowPath;
+import easypath.Path;
+import easypath.PathUtil;
 import edu.wpi.cscore.UsbCamera;
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.Compressor;
@@ -20,11 +24,6 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-
-import easypath.EasyPath;
-import easypath.EasyPathConfig;
-import easypath.PathUtil;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -34,9 +33,7 @@ import easypath.PathUtil;
  * project.
  */
 public class Robot extends TimedRobot {
-  
-  
-  
+
   Solenoid gear, hatch;
   Compressor c;
 
@@ -44,7 +41,7 @@ public class Robot extends TimedRobot {
   Joystick Driver, Operator;
 
   
-  VictorSPX left, right;
+  VictorSPX left, right, aim;
 
   Encoder leftEncoder, rightEncoder;
 
@@ -60,11 +57,12 @@ public class Robot extends TimedRobot {
   UsbCamera frontCamera;
   UsbCamera lowCamera;
 
-  static DriveTrain dt;
+  DriveTrain dt;
 
   double rDist;
 
-  // EasyPathConfig config;
+ EasyPathConfig config;
+  private FollowPath m_autonomousCommand;
 
 
   /**
@@ -74,18 +72,12 @@ public class Robot extends TimedRobot {
   @Override
   public void robotInit() { 
     
-    left = new VictorSPX(21);
+    left  = new VictorSPX(21);
     right = new VictorSPX(22);
-    
-    rightEncoder = new Encoder(0, 1);
-    leftEncoder = new Encoder(2, 3);
-
-    rightEncoder.setName("right");
-    leftEncoder.setName("left");
-
+    aim   = new VictorSPX(23);
     
     gear = new Solenoid(50, 0);
-    hatch = new Solenoid(50, 1);
+    //hatch = new Solenoid(50, 1);
     
     c = new Compressor(0);
     c.setClosedLoopControl(true);
@@ -97,30 +89,34 @@ public class Robot extends TimedRobot {
 
     
     frontCamera = CameraServer.getInstance().startAutomaticCapture();
-    lowCamera = CameraServer.getInstance().startAutomaticCapture();
+    lowCamera   = CameraServer.getInstance().startAutomaticCapture();
 
     
 
      dt = new DriveTrain();
      
-    //  config = new EasyPathConfig(
-    //     dt, // the subsystem itself
-    //     dt::setLeftRightMotorSpeeds, // function to set left/right speeds
-    //     // function to give EasyPath the length driven
-    //     () -> PathUtil.defaultLengthDrivenEstimator(dt::getLeftDistance, dt::getRightDistance),
-    //     dt::getHeading, // function to give EasyPath the heading of your robot
-    //     dt::reset, // function to reset your encoders to 0
-    //     0.07 // kP value for P loop
-    // );
+     config = new EasyPathConfig(
+        dt, // the subsystem itself
+        dt::setLeftRightMotorSpeeds, // function to set left/right speeds
+        // function to give EasyPath the length driven
+        () -> PathUtil.defaultLengthDrivenEstimator(dt::getLeftDistance, dt::getRightDistance),
+        dt::getHeading, // function to give EasyPath the heading of your robot
+        dt::reset, // function to reset your encoders to 0
+        0.07 // kP value for P loop
+    );
+
+    EasyPath.configure(config);
     
-    // config = new EasyPathConfig(
-    //   dt, //subsystem, 
-    //   dt::setLeftRightMotorSpeeds, //setLeftRightDriveSpeedFunction, 
-    //   () -> PathUtil.defaultLengthDrivenEstimator(dt::getLeftDistance, dt::getRightDistance),
-    //   dt::getHeading, // getCurrentAngleFunction, 
-    //   dt::reset, //resetEncodersAndGyroFunction, 
-    //   0.07  //kP)
-    // );
+    // m_autonomousCommand = new FollowPath(
+    //   new Path(t -> 
+		// /* {"start":{"x":62,"y":218},"mid1":{"x":128,"y":221},"mid2":{"x":126,"y":176},"end":{"x":218,"y":175}} */
+		// (276 * Math.pow(t, 2) + -288 * t + 9) / (486 * Math.pow(t, 2) + -408 * t + 198),
+		// 164.34), x -> {
+    //   if(x < 0.15) return 0.6;
+    //   else if (x < 0.75) return 0.8;
+    //   else return 0.25;
+    //     }
+    //   );
     
     
 
@@ -138,7 +134,7 @@ public class Robot extends TimedRobot {
    *
    * <p>This runs after the mode specific periodic functions, but before
    * LiveWindow and SmartDashboard integrated updating.
-   */
+   */                                                                          
   @Override
   public void robotPeriodic() {
   }
@@ -161,15 +157,28 @@ public class Robot extends TimedRobot {
         // -----Use this code------
     
      //Forward 
-     moveBotAuto(1.8, 1.0, 0); 
+     //moveBotAuto(1.8, 1.0, 0); 
      //Turn left
-      moveBotAuto(0.45, 0, 1);
+    //moveBotAuto(0.45, 0, 1);
      //Forward
-       moveBotAuto(0.5, 1.0, 0); 
+     // moveBotAuto(0.5, 1.0, 0); 
       //Turn right 
-     moveBotAuto(0.45, 0, -1);
+     //moveBotAuto(0.45, 0, -1);
       //Forward 
-     moveBotAuto(0.2, 1.0, 0);
+     //moveBotAuto(0.2, 1.0, 0);
+
+    //EasyPath
+     m_autonomousCommand = new FollowPath(
+      new Path(t -> 
+		/* {"start":{"x":62,"y":218},"mid1":{"x":128,"y":221},"mid2":{"x":126,"y":176},"end":{"x":218,"y":175}} */
+		(276 * Math.pow(t, 2) + -288 * t + 9) / (486 * Math.pow(t, 2) + -408 * t + 198),
+		164.34), x -> {
+      if(x < 0.15) return 0.6;
+      else if (x < 0.75) return 0.8;
+      else return 0.25;
+        }
+      );
+    m_autonomousCommand.start();
      
   }
 
@@ -187,29 +196,36 @@ public class Robot extends TimedRobot {
   @Override 
   public void teleopPeriodic() {
     //shooter
-    if(Operator.getRawButton(5)){
-      left.set(ControlMode.PercentOutput, 1.0);
-      right.set(ControlMode.PercentOutput, 1.0);
-    }
-    else if(Operator.getRawButton(6)){
-      left.set(ControlMode.PercentOutput, -0.3);
-      right.set(ControlMode.PercentOutput, -0.3);
-    }
-    else{
-      left.set(ControlMode.PercentOutput, 0); 
-      right.set(ControlMode.PercentOutput, 0);
-    }
+    // if(Operator.getRawAxis(2) < 0.01){
+    //   left.set(ControlMode.PercentOutput, 1.0);
+    //   right.set(ControlMode.PercentOutput, 1.0);
+    // }
+    // else if(Operator.getRawAxis(3) < 0.01){
+    //   left.set(ControlMode.PercentOutput, -0.3);
+    //   right.set(ControlMode.PercentOutput, -0.3);
+    // }
+    // else{
+    //   left.set(ControlMode.PercentOutput, 0); 
+    //   right.set(ControlMode.PercentOutput, 0);
+    // }
+
+    //Cargo rotation
+    //aim.set(ControlMode.PercentOutput, Operator.getRawAxis(1));
 
 
     //Hatch
-    if (Operator.getRawButton(7)){
-      hatch.set(true);
-    }
-    else if (Operator.getRawButton(8)){
-      hatch.set(false);
-    }
-    
+    // if (Operator.getRawButton(5)){
+    //   hatch.set(true);
+    // }
+    // else if (Operator.getRawButton(6)){
+    //   hatch.set(false);
+    // }
+    //Hatch push code
+    /*
+     if(Operator.getRawAxis(5)){
 
+     }
+    */
     //drive train
     moveSpeed = Driver.getRawAxis(3) - Driver.getRawAxis(2);
     rotation = Driver.getRawAxis(0);
@@ -221,93 +237,7 @@ public class Robot extends TimedRobot {
 
     System.out.print("LEFT ENCODER" + leftEncoder.getDistance());
     System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
-    System.out.print("RIGHT ENCODER   " + rDist);
+    
 
 
     

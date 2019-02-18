@@ -20,39 +20,43 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
  */
 public class DriveTrain extends Subsystem {
 
-  public WPI_TalonSRX leftMaster,  rightMaster;
+  public WPI_TalonSRX leftMaster,  wrightMaster;
+
+
   public VictorSPX leftSlave, rightSlave;
 
   public DifferentialDrive drive;
 
-  // public Encoder leftEncoder, rightEncoder;
+  public Encoder leftEncoder, rightEncoder;
 
   public final double DISTANCE_PER_ENCODER_PULSE = 12 / 215; // 12 inches / ~215 ticks
 
-  private ADXRS450_Gyro gyro;
+ // private ADXRS450_Gyro gyro;
 
   public DriveTrain() {
     
     leftMaster = new WPI_TalonSRX(11);
-    rightMaster = new WPI_TalonSRX(12);
+    wrightMaster = new WPI_TalonSRX(12);
     leftSlave = new VictorSPX(13);
     rightSlave = new VictorSPX(14);
 
     leftSlave.follow(leftMaster);
-    rightSlave.follow(rightMaster);
+    rightSlave.follow(wrightMaster);
 
     leftMaster.configOpenloopRamp(0.2);
-    rightMaster.configOpenloopRamp(0.2);
+    wrightMaster.configOpenloopRamp(0.2);
 
-    drive = new DifferentialDrive(leftMaster, rightMaster);
+    drive = new DifferentialDrive(leftMaster, wrightMaster);
     drive.setMaxOutput(1);
 
-    // leftEncoder = new Encoder(2, 3);
-    // rightEncoder = new Encoder(0, 1);
-    // leftEncoder.setDistancePerPulse(DISTANCE_PER_ENCODER_PULSE);
-    // rightEncoder.setDistancePerPulse(DISTANCE_PER_ENCODER_PULSE);
+    leftEncoder = new Encoder(2, 3);
+    rightEncoder = new Encoder(0, 1);
+    rightEncoder.setName("right");
+    leftEncoder.setName("left");
+    leftEncoder.setDistancePerPulse(DISTANCE_PER_ENCODER_PULSE);
+    rightEncoder.setDistancePerPulse(DISTANCE_PER_ENCODER_PULSE);
 
-    gyro = new ADXRS450_Gyro();
+    //gyro = new ADXRS450_Gyro();
 
    
   }
@@ -70,26 +74,26 @@ public class DriveTrain extends Subsystem {
 
 public void setLeftRightMotorSpeeds(double leftPower, double rightPower) {
   leftMaster.set(leftPower);
-  rightMaster.set(-rightPower);
+  wrightMaster.set(-rightPower);
   drive.arcadeDrive(rightPower, 0);
 }
 
-// public double getLeftDistance() {
-//   // return leftEncoder.getDistance();
-//   }
+public double getLeftDistance() {
+  return leftEncoder.getDistance();
+  }
 
-//   public double getRightDistance() {
-//   // return rightEncoder.getDistance();
-//   }
+  public double getRightDistance() {
+  return rightEncoder.getDistance();
+  }
 
   public double getHeading() {
-    return gyro.getAngle();
+    return 0.1;
 }
 
   public void reset() {
-    gyro.reset();
-    // leftEncoder.reset();
-    // rightEncoder.reset();
+    //gyro.reset();
+    leftEncoder.reset();
+    rightEncoder.reset();
     }
 
   @Override
