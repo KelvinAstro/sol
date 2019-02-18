@@ -31,7 +31,7 @@ public class DriveTrain extends Subsystem {
 
   public final double DISTANCE_PER_ENCODER_PULSE = 12 / 215; // 12 inches / ~215 ticks
 
- // private ADXRS450_Gyro gyro;
+ private ADXRS450_Gyro gyro;
 
   public DriveTrain() {
     
@@ -42,6 +42,7 @@ public class DriveTrain extends Subsystem {
 
     leftSlave.follow(leftMaster);
     rightSlave.follow(wrightMaster);
+
 
     leftMaster.configOpenloopRamp(0.2);
     wrightMaster.configOpenloopRamp(0.2);
@@ -56,7 +57,7 @@ public class DriveTrain extends Subsystem {
     leftEncoder.setDistancePerPulse(DISTANCE_PER_ENCODER_PULSE);
     rightEncoder.setDistancePerPulse(DISTANCE_PER_ENCODER_PULSE);
 
-    //gyro = new ADXRS450_Gyro();
+    gyro = new ADXRS450_Gyro();
 
    
   }

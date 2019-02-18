@@ -8,6 +8,7 @@
 package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 
 
@@ -75,6 +76,7 @@ public class Robot extends TimedRobot {
     left  = new VictorSPX(21);
     right = new VictorSPX(22);
     aim   = new VictorSPX(23);
+    aim.setNeutralMode(NeutralMode.Brake);
     
     gear = new Solenoid(50, 0);
     //hatch = new Solenoid(50, 1);
@@ -107,16 +109,16 @@ public class Robot extends TimedRobot {
 
     EasyPath.configure(config);
     
-    // m_autonomousCommand = new FollowPath(
-    //   new Path(t -> 
-		// /* {"start":{"x":62,"y":218},"mid1":{"x":128,"y":221},"mid2":{"x":126,"y":176},"end":{"x":218,"y":175}} */
-		// (276 * Math.pow(t, 2) + -288 * t + 9) / (486 * Math.pow(t, 2) + -408 * t + 198),
-		// 164.34), x -> {
-    //   if(x < 0.15) return 0.6;
-    //   else if (x < 0.75) return 0.8;
-    //   else return 0.25;
-    //     }
-    //   );
+    m_autonomousCommand = new FollowPath(
+      new Path(t -> 
+		/* {"start":{"x":62,"y":218},"mid1":{"x":128,"y":221},"mid2":{"x":126,"y":176},"end":{"x":218,"y":175}} */
+		(276 * Math.pow(t, 2) + -288 * t + 9) / (486 * Math.pow(t, 2) + -408 * t + 198),
+		164.34), x -> {
+      if(x < 0.15) return 0.6;
+      else if (x < 0.75) return 0.8;
+      else return 0.25;
+        }
+      );
     
     
 
@@ -167,18 +169,18 @@ public class Robot extends TimedRobot {
       //Forward 
      //moveBotAuto(0.2, 1.0, 0);
 
-    //EasyPath
-     m_autonomousCommand = new FollowPath(
-      new Path(t -> 
-		/* {"start":{"x":62,"y":218},"mid1":{"x":128,"y":221},"mid2":{"x":126,"y":176},"end":{"x":218,"y":175}} */
-		(276 * Math.pow(t, 2) + -288 * t + 9) / (486 * Math.pow(t, 2) + -408 * t + 198),
-		164.34), x -> {
-      if(x < 0.15) return 0.6;
-      else if (x < 0.75) return 0.8;
-      else return 0.25;
-        }
-      );
-    m_autonomousCommand.start();
+    // //EasyPath
+    //  m_autonomousCommand = new FollowPath(
+    //   new Path(t -> 
+		// /* {"start":{"x":62,"y":218},"mid1":{"x":128,"y":221},"mid2":{"x":126,"y":176},"end":{"x":218,"y":175}} */
+		// (276 * Math.pow(t, 2) + -288 * t + 9) / (486 * Math.pow(t, 2) + -408 * t + 198),
+		// 164.34), x -> {
+    //   if(x < 0.15) return 0.6;
+    //   else if (x < 0.75) return 0.8;
+    //   else return 0.25;
+    //     }
+    //   );
+    // m_autonomousCommand.start();
      
   }
 
@@ -196,21 +198,28 @@ public class Robot extends TimedRobot {
   @Override 
   public void teleopPeriodic() {
     //shooter
-    // if(Operator.getRawAxis(2) < 0.01){
-    //   left.set(ControlMode.PercentOutput, 1.0);
-    //   right.set(ControlMode.PercentOutput, 1.0);
-    // }
-    // else if(Operator.getRawAxis(3) < 0.01){
-    //   left.set(ControlMode.PercentOutput, -0.3);
-    //   right.set(ControlMode.PercentOutput, -0.3);
-    // }
-    // else{
-    //   left.set(ControlMode.PercentOutput, 0); 
-    //   right.set(ControlMode.PercentOutput, 0);
-    // }
+    if(Operator.getRawButton(2)){
+      left.set(ControlMode.PercentOutput, 1.0);
+      right.set(ControlMode.PercentOutput, 1.0);
+    }
+    else if(Operator.getRawButton(3)){
+      left.set(ControlMode.PercentOutput, -0.3);
+      right.set(ControlMode.PercentOutput, -0.3);
+    }
+    else{
+      left.set(ControlMode.PercentOutput, 0); 
+      right.set(ControlMode.PercentOutput, 0);
+    }
 
     //Cargo rotation
-    //aim.set(ControlMode.PercentOutput, Operator.getRawAxis(1));
+    if(Operator.getRawAxis(1) != 0 ){
+
+      aim.set(ControlMode.PercentOutput, -0.2 * Operator.getRawAxis(1));
+    }
+    else{
+      aim.set(ControlMode.PercentOutput, -0.15);
+    }
+
 
 
     //Hatch
@@ -233,10 +242,10 @@ public class Robot extends TimedRobot {
 
     gear.set(! Driver.getRawButton(3));
 
-    rDist = rightEncoder.getDistance();
+    // rDist = rightEncoder.getDistance();
 
-    System.out.print("LEFT ENCODER" + leftEncoder.getDistance());
-    System.out.print("RIGHT ENCODER   " + rDist);
+    // System.out.print("LEFT ENCODER" + leftEncoder.getDistance());
+    // System.out.print("RIGHT ENCODER   " + rDist);
     
 
 
