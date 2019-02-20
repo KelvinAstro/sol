@@ -10,7 +10,7 @@ package frc.robot;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
-
+import com.kauailabs.navx.frc.AHRS;
 
 import easypath.EasyPath;
 import easypath.EasyPathConfig;
@@ -22,6 +22,7 @@ import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
@@ -58,12 +59,15 @@ public class Robot extends TimedRobot {
   UsbCamera frontCamera;
   UsbCamera lowCamera;
 
-  DriveTrain dt;
+  static DriveTrain dt;
 
   double rDist;
 
- EasyPathConfig config;
-  private FollowPath m_autonomousCommand;
+//  EasyPathConfig config;
+  // private FollowPath m_autonomousCommand;
+
+  AHRS gyro;
+  float angle;
 
 
   /**
@@ -79,7 +83,7 @@ public class Robot extends TimedRobot {
     aim.setNeutralMode(NeutralMode.Brake);
     
     gear = new Solenoid(50, 0);
-    //hatch = new Solenoid(50, 1);
+    hatch = new Solenoid(50, 1);
     
     c = new Compressor(0);
     c.setClosedLoopControl(true);
@@ -93,32 +97,34 @@ public class Robot extends TimedRobot {
     frontCamera = CameraServer.getInstance().startAutomaticCapture();
     lowCamera   = CameraServer.getInstance().startAutomaticCapture();
 
-    
+    gyro = new AHRS(SPI.Port.kMXP);
+
+    angle = gyro.getYaw();
 
      dt = new DriveTrain();
      
-     config = new EasyPathConfig(
-        dt, // the subsystem itself
-        dt::setLeftRightMotorSpeeds, // function to set left/right speeds
-        // function to give EasyPath the length driven
-        () -> PathUtil.defaultLengthDrivenEstimator(dt::getLeftDistance, dt::getRightDistance),
-        dt::getHeading, // function to give EasyPath the heading of your robot
-        dt::reset, // function to reset your encoders to 0
-        0.07 // kP value for P loop
-    );
+    //  config = new EasyPathConfig(
+    //     dt, // the subsystem itself
+    //     dt::setLeftRightMotorSpeeds, // function to set left/right speeds
+    //     // function to give EasyPath the length driven
+    //     () -> PathUtil.defaultLengthDrivenEstimator(dt::getLeftDistance, dt::getRightDistance),
+    //     gyro.getYaw(), // function to give EasyPath the heading of your robot
+    //     dt::reset, // function to reset your encoders to 0
+    //     0.07 // kP value for P loop
+    // );
 
-    EasyPath.configure(config);
+    // EasyPath.configure(config);
     
-    m_autonomousCommand = new FollowPath(
-      new Path(t -> 
-		/* {"start":{"x":62,"y":218},"mid1":{"x":128,"y":221},"mid2":{"x":126,"y":176},"end":{"x":218,"y":175}} */
-		(276 * Math.pow(t, 2) + -288 * t + 9) / (486 * Math.pow(t, 2) + -408 * t + 198),
-		164.34), x -> {
-      if(x < 0.15) return 0.6;
-      else if (x < 0.75) return 0.8;
-      else return 0.25;
-        }
-      );
+    // m_autonomousCommand = new FollowPath(
+    //   new Path(t -> 
+		// /* {"start":{"x":62,"y":218},"mid1":{"x":128,"y":221},"mid2":{"x":126,"y":176},"end":{"x":218,"y":175}} */
+		// (276 * Math.pow(t, 2) + -288 * t + 9) / (486 * Math.pow(t, 2) + -408 * t + 198),
+		// 164.34), x -> {
+    //   if(x < 0.15) return 0.6;
+    //   else if (x < 0.75) return 0.8;
+    //   else return 0.25;
+    //     }
+    //   );
     
     
 
@@ -214,21 +220,21 @@ public class Robot extends TimedRobot {
     //Cargo rotation
     if(Operator.getRawAxis(1) != 0 ){
 
-      aim.set(ControlMode.PercentOutput, -0.2 * Operator.getRawAxis(1));
+      aim.set(ControlMode.PercentOutput, -0.3 * Operator.getRawAxis(1));
     }
     else{
-      aim.set(ControlMode.PercentOutput, -0.15);
+      aim.set(ControlMode.PercentOutput, 0);
     }
 
 
 
     //Hatch
-    // if (Operator.getRawButton(5)){
-    //   hatch.set(true);
-    // }
-    // else if (Operator.getRawButton(6)){
-    //   hatch.set(false);
-    // }
+    if (Operator.getRawButton(5)){
+      hatch.set(true);
+    }
+    else if (Operator.getRawButton(6)){
+      hatch.set(false);
+    }
     //Hatch push code
     /*
      if(Operator.getRawAxis(5)){
@@ -238,14 +244,74 @@ public class Robot extends TimedRobot {
     //drive train
     moveSpeed = Driver.getRawAxis(3) - Driver.getRawAxis(2);
     rotation = Driver.getRawAxis(0);
-    dt.drive.arcadeDrive(-moveSpeed, - rotation);
+    dt.drive.arcadeDrive(-moveSpeed, - rotation, true);
 
     gear.set(! Driver.getRawButton(3));
+    angle = gyro.getYaw();
 
     // rDist = rightEncoder.getDistance();
 
     // System.out.print("LEFT ENCODER" + leftEncoder.getDistance());
     // System.out.print("RIGHT ENCODER   " + rDist);
+
+
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    System.out.print("gyro  " + angle);
+    
+
+    
     
 
 

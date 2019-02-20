@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.command.Subsystem;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.interfaces.Gyro;
 
 /**
  * Add your docs here.
@@ -31,7 +32,6 @@ public class DriveTrain extends Subsystem {
 
   public final double DISTANCE_PER_ENCODER_PULSE = 12 / 215; // 12 inches / ~215 ticks
 
- private ADXRS450_Gyro gyro;
 
   public DriveTrain() {
     
@@ -57,7 +57,6 @@ public class DriveTrain extends Subsystem {
     leftEncoder.setDistancePerPulse(DISTANCE_PER_ENCODER_PULSE);
     rightEncoder.setDistancePerPulse(DISTANCE_PER_ENCODER_PULSE);
 
-    gyro = new ADXRS450_Gyro();
 
    
   }
@@ -87,12 +86,12 @@ public double getLeftDistance() {
   return rightEncoder.getDistance();
   }
 
-  public double getHeading() {
-    return 0.1;
-}
+//   public double getHeading() {
+//     return gyro.getAngle();
+// }
 
   public void reset() {
-    //gyro.reset();
+    // gyro.reset();
     leftEncoder.reset();
     rightEncoder.reset();
     }
